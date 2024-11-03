@@ -181,18 +181,46 @@ for file_name in os.listdir(folder_path):
 ```
 
 2. 
+2. The number of hospitals per zip code is given in the output below.
 
 ```{python}
 import geopandas as gpd
+import matplotlib.pyplot as plt
 
 # loading .shp file
 filepath = "/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp"
 data = gpd.read_file(filepath)
+texas_df = gpd.read_file(filepath)
 
 # filtering data to Texas zip codes
 data['Texas'] = data['ZCTA5'].apply(lambda x: 1 if x.startswith(('75', '76', '77', '78', '79')) else 0)
 data = data[data['Texas'] == 1]
+texas_df['Texas'] = texas_df['ZCTA5'].apply(lambda x: 1 if x.startswith(('75', '76', '77', '78', '79')) else 0)
+texas_df = texas_df[texas_df['Texas'] == 1]
 
+# convert zip codes in both datasets to string
+texas_df['ZCTA5'] = texas_df['ZCTA5'].astype(str)
+pos2016['ZIP_CD'] = pos2016['ZIP_CD'].fillna(0) # account for NAs in pos2016 zip code data
+pos2016['ZIP_CD'] = pos2016['ZIP_CD'].astype(int).astype(str)
+
+# merge both datasets by zip code
+hosp_tex_2016 = pd.merge(texas_df, pos2016, how = 'inner', left_on = 'ZCTA5', right_on = 'ZIP_CD')
+
+# number of hospitals in Texas per zip code 2016
+print(hosp_tex_2016['ZCTA5'].value_counts())
+
+# 
+hosp_per_zip = hosp_tex_2016.groupby('ZIP_CD').size().reset_index(name='hospital_count')
+
+# merge with spatial geometry data for zip codes
+hospitals_geo = hosp_tex_2016[['ZIP_CD', 'geometry']].drop_duplicates().merge(
+    hosp_per_zip, on='ZIP_CD', how='left').fillna(0)
+
+# choropleth of hospitals by zip code
+plt.figure(figsize=(20, 16), dpi = 1000)
+hospitals_geo.plot(column='hospital_count', cmap='OrRd', legend=True, edgecolor='black').set_axis_off()
+plt.title("Number of Hospitals per ZIP Code in Texas 2016")
+plt.show()
 ```
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
