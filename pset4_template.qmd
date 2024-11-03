@@ -344,15 +344,271 @@ plt.show()
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
 1. 
+```{python}
+import geopandas as gpd
+
+# Load the national zip code shapefile (assuming the same zip file as before)
+national_zips_filepath = "C:/Users/Shreya Work/Downloads/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp"
+national_zips_df = gpd.read_file(national_zips_filepath)
+
+# Calculate centroids for each zip code geometry
+national_zips_df['centroid'] = national_zips_df.geometry.centroid
+
+# Create a new GeoDataFrame for the centroids
+zips_all_centroids = gpd.GeoDataFrame(national_zips_df[['ZCTA5', 'centroid']])
+zips_all_centroids = zips_all_centroids.set_geometry('centroid')
+
+# Rename columns for clarity
+zips_all_centroids.columns = ['ZIP_Code', 'geometry']
+
+# Display the dimensions of the GeoDataFrame
+dimensions = zips_all_centroids.shape
+print(f"Dimensions of zips_all_centroids GeoDataFrame: {dimensions}")
+
+# Display the first few rows of the GeoDataFrame to understand the columns
+print(zips_all_centroids.head())
+```
+
 2. 
+
+```{python}
+import geopandas as gpd
+
+
+# Create a list of zip code prefixes for Texas and its bordering states
+texas_prefixes = ['75']
+border_states_prefixes = ['73', '74', '76', '77', '78', '79']  # Oklahoma, New Mexico, Arkansas, Louisiana
+
+# Create GeoDataFrame for Texas zip codes
+zips_texas_centroids = zips_all_centroids[zips_all_centroids['ZIP_Code'].str.startswith(tuple(texas_prefixes))]
+
+# Create GeoDataFrame for Texas and bordering states zip codes
+border_states_prefixes_combined = texas_prefixes + border_states_prefixes
+zips_texas_borderstates_centroids = zips_all_centroids[zips_all_centroids['ZIP_Code'].str.startswith(tuple(border_states_prefixes_combined))]
+
+# Count unique zip codes in each subset
+unique_texas_zip_codes = zips_texas_centroids['ZIP_Code'].nunique()
+unique_borderstates_zip_codes = zips_texas_borderstates_centroids['ZIP_Code'].nunique()
+
+# Display results
+print(f"Number of unique zip codes in Texas: {unique_texas_zip_codes}")
+print(f"Number of unique zip codes in Texas or a bordering state: {unique_borderstates_zip_codes}")
+
+```
+
 3. 
+
+```{python}
+
+import geopandas as gpd
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the zip code shapefile for national ZIP codes
+filepath = "C:/Users/Shreya Work/Downloads/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp" 
+zips_all_centroids = gpd.read_file(filepath)
+
+# Create a GeoDataFrame for Texas zip codes
+zips_texas_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith(('75', '76', '77', '78', '79'))]
+
+# Create a GeoDataFrame for zip codes in Texas or bordering states
+border_states = ['Oklahoma', 'Arkansas', 'Louisiana', 'New Mexico']  # Include bordering states
+# You will need a way to filter these based on their zip prefixes
+zips_texas_borderstates_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith(('75', '76', '77', '78', '79', '73', '71', '70', '88'))]
+
+# Assuming hosp_per_zip is already defined from previous analysis
+# hosp_per_zip should look like: 
+# hosp_per_zip = hosp_tex_2016.groupby('ZIP_CD').size().reset_index(name='hospital_count')
+
+# Ensure hosp_per_zip has the correct column for merging
+hosp_per_zip = hosp_per_zip.rename(columns={'ZIP_CD': 'ZCTA5'})
+
+# Merge to find ZIP codes in Texas border states with at least 1 hospital
+zips_withhospital_centroids = zips_texas_borderstates_centroids.merge(
+    hosp_per_zip,
+    how='inner',  # Use inner merge to keep only those with at least 1 hospital
+    on='ZCTA5'  # Merging on the 'ZCTA5' column which represents ZIP codes
+)
+
+# Display the resulting GeoDataFrame
+print(zips_withhospital_centroids.head())
+print(f"Unique ZIP Codes with Hospitals: {zips_withhospital_centroids['ZCTA5'].nunique()}")
+
+```
+
 4. 
     a.
+
+```{python}
+import geopandas as gpd
+import pandas as pd
+import time
+
+# Load the zip code shapefile for Texas ZIP codes
+filepath = "C:/Users/Shreya Work/Downloads/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp"  
+zips_texas_centroids = gpd.read_file(filepath)
+zips_texas_centroids = zips_texas_centroids[zips_texas_centroids['ZCTA5'].str.startswith(('75', '76', '77', '78', '79'))]
+
+# Subset to 10 zip codes for testing
+subset_zips_texas = zips_texas_centroids.head(10)
+
+# Ensure that the coordinate reference system (CRS) is the same for both GeoDataFrames
+subset_zips_texas = subset_zips_texas.to_crs(epsg=4326)  # Assuming your zips_withhospital_centroids is in EPSG:4326
+zips_withhospital_centroids = zips_withhospital_centroids.to_crs(epsg=4326)
+
+# Start timing the distance calculation
+start_time = time.time()
+
+# Calculate distances to the nearest zip code with at least one hospital
+distances = subset_zips_texas.geometry.apply(lambda x: zips_withhospital_centroids.geometry.distance(x).min())
+
+# End timing
+end_time = time.time()
+
+# Display the results
+subset_zips_texas['Distance to Nearest Hospital'] = distances
+print(subset_zips_texas[['ZCTA5', 'Distance to Nearest Hospital']])
+
+# Calculate time taken
+time_taken = end_time - start_time
+print(f"Time taken for the join with 10 ZIP codes: {time_taken:.2f} seconds")
+
+# Estimate total time for the entire procedure
+total_zip_codes = len(zips_texas_centroids)
+estimated_time = (time_taken / len(subset_zips_texas)) * total_zip_codes
+print(f"Estimated total time for the entire procedure: {estimated_time:.2f} seconds")
+
+```
+
     b.
+
+```{python}
+import geopandas as gpd
+import pandas as pd
+import time
+
+# Load the zip code shapefile for all ZIP codes in the U.S.
+filepath = "C:/Users/Shreya Work/Downloads/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp" 
+
+zips_all_centroids = gpd.read_file(filepath)
+
+# Create a subset of Texas zip codes
+zips_texas_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith(('75', '76', '77', '78', '79'))]
+
+# Create a subset of border states (example: Louisiana, Arkansas, Oklahoma, New Mexico)
+border_states_prefixes = ['70', '71', '72', '73', '74', '73', '74', '87']
+zips_texas_borderstates_centroids = zips_all_centroids[zips_all_centroids['ZCTA5'].str.startswith(tuple(border_states_prefixes))]
+
+# Load the cleaned POS data (make sure this DataFrame contains hospital information)
+pos2016 = pd.read_csv('path_to_your_pos_data.csv')  # Load your cleaned POS data
+
+# Create zips_withhospital_centroids
+zips_withhospital_centroids = zips_texas_borderstates_centroids.merge(
+    pos2016.groupby('ZIP_CD').size().reset_index(name='hospital_count'),
+    how='inner',
+    left_on='ZCTA5',  # This assumes 'ZCTA5' corresponds to ZIP_CD in pos2016
+    right_on='ZIP_CD'
+)
+
+# Ensure that the coordinate reference system (CRS) is the same for both GeoDataFrames
+zips_texas_centroids = zips_texas_centroids.to_crs(epsg=4326)  # Assuming EPSG:4326 is your CRS
+zips_withhospital_centroids = zips_withhospital_centroids.to_crs(epsg=4326)
+
+# Start timing the full distance calculation
+start_time_full = time.time()
+
+# Calculate distances to the nearest zip code with at least one hospital
+distances_full = zips_texas_centroids.geometry.apply(lambda x: zips_withhospital_centroids.geometry.distance(x).min())
+
+# End timing
+end_time_full = time.time()
+
+# Add distances to the GeoDataFrame
+zips_texas_centroids['Distance to Nearest Hospital'] = distances_full
+
+# Display the first few results
+print(zips_texas_centroids[['ZCTA5', 'Distance to Nearest Hospital']].head())
+
+# Calculate time taken for the full calculation
+time_taken_full = end_time_full - start_time_full
+print(f"Time taken for the full calculation: {time_taken_full:.2f} seconds")
+
+# Optionally, compare with estimated time
+total_zip_codes = len(zips_texas_centroids)
+estimated_time_full = (time_taken / len(subset_zips_texas)) * total_zip_codes
+print(f"Estimated total time for the entire procedure: {estimated_time_full:.2f} seconds")
+
+```
+
+c.
+
+```{python}
+# Specify the path to the .prj file
+prj_file_path = 'C:/Users/Shreya Work/Downloads/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.prj' 
+
+# Read the contents of the .prj file
+with open(prj_file_path, 'r') as file:
+    prj_contents = file.read()
+
+print(prj_contents)
+
+```
+
 5. 
     a.
+
+```{python}
+
+# Calculate the average distance to the nearest hospital for each zip code
+average_distances = zips_texas_centroids.groupby('ZIP_CD')['distance_to_nearest_hospital'].mean().reset_index()
+
+# Rename the column for clarity
+average_distances.columns = ['ZIP_CD', 'Average_Distance_to_Hospital']
+
+# Display the average distances
+print(average_distances)
+
+```
+
     b.
+```{python}
+# Convert average distances from meters to miles
+average_distances['Average_Distance_to_Hospital_miles'] = average_distances['Average_Distance_to_Hospital'] / 1609.34
+
+# Display the average distance in miles
+print(average_distances[['ZIP_CD', 'Average_Distance_to_Hospital_miles']])
+
+```
+
     c.
+
+```{python}
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+
+# Merge the average distances into the GeoDataFrame
+zips_texas_centroids = zips_texas_centroids.merge(average_distances[['ZIP_CD', 'Average_Distance_to_Hospital_miles']], 
+                                                    left_on='ZCTA5', 
+                                                    right_on='ZIP_CD', 
+                                                    how='left')
+
+# Plotting the choropleth map
+plt.figure(figsize=(12, 10))
+zips_texas_centroids.plot(column='Average_Distance_to_Hospital_miles', 
+                          cmap='OrRd', 
+                          legend=True,
+                          edgecolor='black',
+                          missing_kwds={"color": "lightgrey", "label": "Missing values"})
+
+plt.title("Average Distance to Nearest Hospital by Zip Code in Texas", fontsize=16)
+plt.xlabel("Longitude")
+plt.ylabel("Latitude")
+plt.axis('off')  # Turn off the axis
+plt.show()
+
+```
+    
     
 ## Effects of closures on access in Texas (15 pts)
 
