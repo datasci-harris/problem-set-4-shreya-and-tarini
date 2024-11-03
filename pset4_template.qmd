@@ -29,7 +29,7 @@ Please refer to the minilesson on code style
 1. This problem set is a paired problem set.
 2. Play paper, scissors, rock to determine who goes first. Call that person *Partner 1*.
     - Partner 1 (name and cnet ID): Tarini Dewan, tarinidewan
-    - Partner 2 (name and cnet ID): Shreya Shravini, 
+    - Partner 2 (name and cnet ID): Shreya Shravini, shreyashravini
 3. Partner 1 will accept the `ps4` and then share the link it creates with their partner. You can only share it with one partner so you will not be able to change it after your partner has accepted. 
 4. "This submission is our work alone and complies with the 30538 integrity policy." Add your initials to indicate your agreement: SS TD
 5. "I have uploaded the names of anyone else other than my partner and I worked with on the problem set **[here](https://docs.google.com/forms/d/185usrCREQaUbvAXpWhChkjghdGgmAZXA3lPWpXLLsts/edit)**": SS TD*  (1 point)
@@ -41,6 +41,7 @@ Please refer to the minilesson on code style
 10. (Partner 1): tag your submission in Gradescope
 
 **Important:** Repositories are for tracking code. **Do not commit the data or shapefiles to your repo.** The best way to do this is with `.gitignore`, which we have covered in class. If you do accidentally commit the data, Github has a [guide](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github#removing-files-from-a-repositorys-history). The best course of action depends on whether you have pushed yet. This also means that both partners will have to download the initial raw data and any data cleaning code will need to be re-run on both partners' computers. 
+**Note:** We created separate datasets to work on our respective sections individually, rather than sharing a single dataset. So, the names of dataframes and columns will vary between sections.
 
 ```{python}
 import pandas as pd
@@ -65,10 +66,7 @@ warnings.filterwarnings('ignore')
 - PGM_TRMNTN_CD: Termination Code
 - ZIP_CD: ZIP Code
 
-
-2.
-
-
+2. 
 
 ```{python}
 # import pos2016.csv
@@ -299,7 +297,7 @@ folder_path = '/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shrey
 for file_name in os.listdir(folder_path):
     file_path = os.path.join(folder_path, file_name)
     file_size_mb = os.path.getsize(file_path) / (1024 * 1024)  # Convert size to MB
-    print(f"File Name: {file_name}, File Size: {file_size_mb:.2f} MB")
+    print(f'File Name: {file_name}, File Size: {file_size_mb:.2f} MB')
 ```
 
 2. The number of hospitals per zip code is given in the output below.
@@ -309,7 +307,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 # loading .shp file
-filepath = "/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp"
+filepath = '/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp'
 texas_df = gpd.read_file(filepath)
 
 # filtering data to Texas zip codes
@@ -326,18 +324,20 @@ hosp_tex_2016 = pd.merge(texas_df, pos2016, how = 'inner', left_on = 'ZCTA5', ri
 
 # number of hospitals in Texas per zip code 2016
 print(hosp_tex_2016['ZCTA5'].value_counts())
-
-# 
-hosp_per_zip = hosp_tex_2016.groupby('ZIP_CD').size().reset_index(name='hospital_count')
+hosp_per_zip = hosp_tex_2016.groupby('ZIP_CD').size().reset_index(name = 'hospital_count')
 
 # merge with spatial geometry data for zip codes
-hospitals_geo = hosp_tex_2016[['ZIP_CD', 'geometry']].drop_duplicates().merge(
-    hosp_per_zip, on='ZIP_CD', how='left').fillna(0)
+hosp_geo = hosp_tex_2016[['ZIP_CD', 'geometry']].drop_duplicates().merge(
+    hosp_per_zip, on = 'ZIP_CD', how = 'left').fillna(0)
 
 # choropleth of hospitals by zip code
-plt.figure(figsize=(20, 16), dpi = 1000)
-hospitals_geo.plot(column='hospital_count', cmap='OrRd', legend=True, edgecolor='black').set_axis_off()
-plt.title("Number of Hospitals per ZIP Code in Texas 2016")
+#plt.figure(figsize = (20, 16), dpi = 1000)
+#hosp_geo.plot(cmap = 'OrRd', legend = True, edgecolor = 'black').set_axis_off()
+#plt.title('Number of Hospitals per ZIP Code in Texas 2016')
+#plt.show()
+fig, ax = plt.subplots(figsize=(10, 10))
+hosp_geo.plot(column='hospital_count', legend=True, ax=ax).set_axis_off()
+plt.title('Hospitals per ZIP Code in Texas')
 plt.show()
 ```
 
@@ -356,9 +356,106 @@ plt.show()
     
 ## Effects of closures on access in Texas (15 pts)
 
-1. 
-2. 
-3. 
+1. The number of hospital closures by ZIP is given in the output below.
+
+```{python}
+# convert zip code in corrected hospital data to string 
+filtered_hospitals_df['ZIP'] = filtered_hospitals_df['ZIP'].astype(int).astype(str)
+
+# merge texas data and closed hospital data only on closed hospital data
+clos_tex = pd.merge(texas_df, filtered_hospitals_df, how = 'inner', left_on = 'ZCTA5', right_on = 'ZIP')
+
+# create a list of directly affected zip codes in Texas
+affected_zips = clos_tex['ZIP'].unique().tolist()
+
+# table of the number of closures by zipcode
+clos_zips = clos_tex.groupby('ZIP').size().reset_index(name = 'closure_count')
+```
+
+2. There are 103 directly affected ZIP codes in Texas.
+
+```{python}
+clos_zips.shape
+
+# merge texas data and closed hospital data only on all Texas hospital data
+clos_tex_all = pd.merge(texas_df, filtered_hospitals_df, how = 'left', left_on = 'ZCTA5', right_on = 'ZIP')
+
+# calculate the number of closed hospitals in Texas in the merged dataframe
+clos_tex_all['Closed'] = clos_tex_all['Year of Suspected Closure'].fillna(0)
+clos_tex_all['Closed'] = clos_tex_all['Closed'].apply(lambda x: 0 if x == 0 else 1)
+
+# group by zip codes and count the number of closed hospitals per zip
+clos_df_agg = clos_tex_all.groupby(['ZCTA5'])['Closed'].sum().reset_index()
+
+# merge with spatial geometry data for zip codes
+clos_geo = pd.merge(clos_df_agg, texas_df, how = 'right', left_on = 'ZCTA5', right_on = 'ZCTA5')
+clos_geo = gpd.GeoDataFrame(clos_geo, geometry = 'geometry')
+
+# choropleth of closed hospitals by zip code
+#plt.figure(figsize=(20, 16), dpi=1000)
+#clos_geo.plot(column='Closed', cmap='OrRd', legend=True, edgecolor='black').set_axis_off()
+#plt.title('Number of Affected Hospitals per ZIP Code in Texas')
+#plt.show()
+fig, ax = plt.subplots(figsize=(10, 10))
+clos_geo.plot(column='Closed', legend=True, ax=ax).set_axis_off()
+plt.title('Number of Directly Affected Hospitals per ZIP Code in Texas')
+plt.show()
+```
+
+3. There are 1009 indirectly affected ZIP codes in Texas.
+
+```{python}
+clos_geo['geometry'].area
+
+# convert square degrees to square meters
+clos_geo = clos_geo.to_crs('EPSG:32614')
+
+# Attribution: ChatGPT
+# Query: "Here is the content of my .prj file. What unit is the area in?
+# Response: In your .prj file, the area units are in degrees. If you are calculating areas using these coordinates, the results will likely be in square degrees, which is not a standard unit for area. To get area measurements in more conventional units like square meters or square kilometers, you would need to project your data to a suitable projected coordinate system, such as NAD83 / UTM Zone appropriate for your region.
+# Query: Help me convert this unit to meters.
+
+# create a 10-mile buffer around each directly affected zip code (10 miles = 16093.4 meters)
+clos_geo2 = clos_geo[clos_geo['Closed'] >= 1]
+buffer_10 = clos_geo2.buffer(16093.4)
+
+# convert buffer back to a GeoDataFrame
+buffer_gdf = gpd.GeoDataFrame(geometry = buffer_10, crs = clos_geo2.crs)
+
+texas_df = texas_df.to_crs('EPSG:32614')
+
+# spatial join with original Texas shapefile
+ind_affected = gpd.sjoin(texas_df, buffer_gdf, how = 'inner', predicate = 'intersects')
+print(ind_affected['ZCTA5'].nunique())
+```
+
 4. 
 
+```{python}
+# classifying zip codes as affected, not affected, indirectly affected in main Texas shapefile
+texas_df['status'] = 'Not Affected'
+texas_df.loc[texas_df['ZCTA5'].isin(clos_tex['ZCTA5']), 'status'] = 'Directly Affected'
+texas_df.loc[texas_df['ZCTA5'].isin(ind_affected['ZCTA5']), 'status'] = 'Indirectly Affected'
+
+# choropleth
+fig, ax = plt.subplots(figsize=(10, 10))
+texas_df.plot(column='status', legend=True, ax=ax)
+plt.title('Hospital Closure Effects by ZIP Code')
+plt.show()
+```
+
 ## Reflecting on the exercise (10 pts) 
+1. 
+
+a. Issues with Current Method:
+
+- The method only checks if the total number of hospitals in a ZIP code decreases, but doesn't verify if it's the same hospital that closed
+- A ZIP code could have two changes at once (one closure and one opening) that would mask the closure
+- Different hospitals in the same ZIP code could swap CMS numbers due to administrative changes
+
+b. Ways to Improve:
+
+- Look at facility names and addresses to track hospitals across years even if CMS numbers change
+- Compare hospital characteristics (like bed size, services) between years to better identify if a "new" hospital is actually the same facility
+- Track staffing levels or patient volume to distinguish between true closures and administrative changes
+- Consider tracking changes in nearby ZIP codes too, as mergers might involve facilities in adjacent areas
