@@ -1,5 +1,5 @@
 ---
-title: "Your Title"
+title: "PS4 v1.2: Spatial"
 format: 
   pdf:
     keep-tex: true
@@ -7,6 +7,7 @@ format:
        text: |
          \usepackage{fvextra}
          \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+         \usepackage{hyperref}
 include-before-body:
   text: |
     \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
@@ -27,12 +28,12 @@ Please refer to the minilesson on code style
 ## Submission Steps (10 pts)
 1. This problem set is a paired problem set.
 2. Play paper, scissors, rock to determine who goes first. Call that person *Partner 1*.
-    - Partner 1 (name and cnet ID):
-    - Partner 2 (name and cnet ID):
+    - Partner 1 (name and cnet ID): Tarini Dewan, tarinidewan
+    - Partner 2 (name and cnet ID): Shreya Shravini, 
 3. Partner 1 will accept the `ps4` and then share the link it creates with their partner. You can only share it with one partner so you will not be able to change it after your partner has accepted. 
-4. "This submission is our work alone and complies with the 30538 integrity policy." Add your initials to indicate your agreement: \*\*\_\_\*\* \*\*\_\_\*\*
-5. "I have uploaded the names of anyone else other than my partner and I worked with on the problem set **[here](https://docs.google.com/forms/d/185usrCREQaUbvAXpWhChkjghdGgmAZXA3lPWpXLLsts/edit)**"  (1 point)
-6. Late coins used this pset: \*\*\_\_\*\* Late coins left after submission: \*\*\_\_\*\*
+4. "This submission is our work alone and complies with the 30538 integrity policy." Add your initials to indicate your agreement: SS TD
+5. "I have uploaded the names of anyone else other than my partner and I worked with on the problem set **[here](https://docs.google.com/forms/d/185usrCREQaUbvAXpWhChkjghdGgmAZXA3lPWpXLLsts/edit)**": SS TD*  (1 point)
+6. Late coins used this pset: 1 Late coins left after submission: 3
 7. Knit your `ps4.qmd` to an PDF file to make `ps4.pdf`, 
     * The PDF should not be more than 25 pages. Use `head()` and re-size figures when appropriate. 
 8. (Partner 1): push  `ps4.qmd` and `ps4.pdf` to your github repo.
@@ -41,16 +42,104 @@ Please refer to the minilesson on code style
 
 **Important:** Repositories are for tracking code. **Do not commit the data or shapefiles to your repo.** The best way to do this is with `.gitignore`, which we have covered in class. If you do accidentally commit the data, Github has a [guide](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github#removing-files-from-a-repositorys-history). The best course of action depends on whether you have pushed yet. This also means that both partners will have to download the initial raw data and any data cleaning code will need to be re-run on both partners' computers. 
 
+```{python}
+import pandas as pd
+import altair as alt
+alt.data_transformers.disable_max_rows() 
+alt.renderers.enable("png", ppi=250)
+import numpy as np
+
+import warnings 
+warnings.filterwarnings('ignore')
+```
+
 ## Download and explore the Provider of Services (POS) file (10 pts)
 
-1. 
+1. The variables are called:
+
+- PRVDR_CTGRY_SBTYP_CD: Provider Category Subtype Code 
+- PRVDR_CTGRY_CD: Provider Category Code
+- PRVDR_NUM: CCN (CMS Certification Number)
+- PGM_TRMNTN_CD: Termination Code
+- ZIP_CD: ZIP Code
+
 2. 
-    a.
-    b.
+
+```{python}
+# import pos2016.csv
+pos2016 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2016.csv')
+
+# create a year column
+pos2016['YEAR'] = '2016'
+  
+# subset data to short-term hospitals
+pos2016_hosp = pos2016[(pos2016['PRVDR_CTGRY_CD'] == 1) & (pos2016['PRVDR_CTGRY_SBTYP_CD'] == 1)].reset_index(drop = True)
+pos2016_hosp
+```  
+
+    a. There are 7,245 hospitals reported in the data. This number seems greater than the actual number of hospitals.
+
+```{python}
+pos2016_hosp.shape
+pos2016_hosp['PRVDR_NUM'].nunique()
+```
+
+    b. According to the American Hospital Association, there were a total of 5,534 hospitals in FY 2016. The mismatch could be because the number in our data includes hospitals that have merged or closed (CMS = 01).
+    
+    Attribution: https://www.aha.org/system/files/2018-01/Fast%20Facts%202018%20pie%20charts.pdf
+
+```{python}
+# check termination status
+pos2016_hosp['PGM_TRMNTN_CD'].value_counts()
+```
+
 3. 
+
+```{python}
+# pos2017.csv
+pos2017 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2017.csv')
+pos2017['YEAR'] = '2017' # year column
+pos2017_hosp = pos2017[(pos2017['PRVDR_CTGRY_CD'] == 1) & (pos2017['PRVDR_CTGRY_SBTYP_CD'] == 1)] # subsetting data
+
+# pos2018.csv
+pos2018 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2018.csv')
+pos2018['YEAR'] = '2018' # year column
+pos2018_hosp = pos2018[(pos2017['PRVDR_CTGRY_CD'] == 1) & (pos2018['PRVDR_CTGRY_SBTYP_CD'] == 1)] # subsetting data
+
+# pos2019.csv
+pos2019 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2019.csv')
+pos2019['YEAR'] = '2019' # year column
+pos2019_hosp = pos2019[(pos2017['PRVDR_CTGRY_CD'] == 1) & (pos2019['PRVDR_CTGRY_SBTYP_CD'] == 1)] # subsetting data
+
+# append datasets
+pos_df = pd.concat([pos2016_hosp, pos2017_hosp, pos2018_hosp, pos2019_hosp])
+
+# plot the number of observations in your dataset by year
+alt.Chart(pos_df).mark_bar().encode(
+    x = alt.X('YEAR:N', title = 'Year'),
+    y = alt.Y('count(PRVDR_CTGRY_SBTYP_CD):Q', title = 'Count of Hospitals')
+).properties(
+    title = 'Distribution of Hospitals Over Time'
+)
+```
+
 4. 
     a.
-    b.
+
+```{python}
+# dropping duplicate CMS numbers across years
+pos_df_uniq = pos_df.drop_duplicates(subset = ['PRVDR_NUM', 'YEAR'], keep = 'first')
+
+# plot the number of unique hospitals in your dataset by year
+alt.Chart(pos_df_uniq).mark_bar().encode(
+    x = alt.X('YEAR:N', title = 'Year'),
+    y = alt.Y('count(PRVDR_CTGRY_SBTYP_CD):Q', title = 'Count of Unique Hospitals')
+).properties(
+    title = 'Distribution of Unique Hospitals Over Time'
+)
+```
+
+    b. The plots are the same which tells us that the dataset is structured such that each row represents a unique hospital per year, with no repeated entries for any hospital within the same year. 
 
 ## Identify hospital closures in POS file (15 pts) (*)
 
@@ -64,9 +153,45 @@ Please refer to the minilesson on code style
 ## Download Census zip code shapefile (10 pt) 
 
 1. 
-    a.
-    b. 
+    a. The five file types are:
+
+    - .dbf: The dBASE table that stores the attribute information of features; data is stored in an array with multiple records and fields (has attribute info)
+    - .prj: The file that stores the coordinate system information 
+    - .shp: The main file that stores the feature geometry (points, lines, polygons)
+    - .shx: The index file that stores the index of the feature geometry (has positional index)
+    - .xml: file format that stores information about the shapefile
+
+    # Attribution: https://desktop.arcgis.com/en/arcmap/latest/manage-data/shapefiles/shapefile-file-extensions.htm
+    
+    b. The size for each of the files is given in the output below.
+
+```{python}
+import os
+
+# define the folder path
+folder_path = '/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/gz_2010_us_860_00_500k'
+
+# get file size
+for file_name in os.listdir(folder_path):
+    file_path = os.path.join(folder_path, file_name)
+    file_size_mb = os.path.getsize(file_path) / (1024 * 1024)  # Convert size to MB
+    print(f"File Name: {file_name}, File Size: {file_size_mb:.2f} MB")
+```
+
 2. 
+
+```{python}
+import geopandas as gpd
+
+# loading .shp file
+filepath = "/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp"
+data = gpd.read_file(filepath)
+
+# filtering data to Texas zip codes
+data['Texas'] = data['ZCTA5'].apply(lambda x: 1 if x.startswith(('75', '76', '77', '78', '79')) else 0)
+data = data[data['Texas'] == 1]
+
+```
 
 ## Calculate zip code’s distance to the nearest hospital (20 pts) (*)
 
