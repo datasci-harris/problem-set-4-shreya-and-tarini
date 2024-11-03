@@ -103,11 +103,13 @@ pos2017_hosp = pos2017[(pos2017['PRVDR_CTGRY_CD'] == 1) & (pos2017['PRVDR_CTGRY_
 
 # pos2018.csv
 pos2018 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2018.csv', encoding='latin1')
+pos2018 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2018.csv', encoding = 'latin1')
 pos2018['YEAR'] = '2018' # year column
 pos2018_hosp = pos2018[(pos2017['PRVDR_CTGRY_CD'] == 1) & (pos2018['PRVDR_CTGRY_SBTYP_CD'] == 1)] # subsetting data
 
 # pos2019.csv
 pos2019 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2019.csv', encoding='latin1')
+pos2019 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2019.csv', encoding = 'latin1')
 pos2019['YEAR'] = '2019' # year column
 pos2019_hosp = pos2019[(pos2017['PRVDR_CTGRY_CD'] == 1) & (pos2019['PRVDR_CTGRY_SBTYP_CD'] == 1)] # subsetting data
 
