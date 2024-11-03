@@ -53,6 +53,8 @@ import warnings
 warnings.filterwarnings('ignore')
 ```
 
+
+
 ## Download and explore the Provider of Services (POS) file (10 pts)
 
 1. The variables are called:
@@ -64,6 +66,70 @@ warnings.filterwarnings('ignore')
 - ZIP_CD: ZIP Code
 
 2. 
+
+
+```{python}
+import pandas as pd
+
+# Load the dataset
+file_path = "C:/Users/Shreya Work/OneDrive/Documents/GitHub/problem-set-4-shreya-and-tarini/pos2016.csv"  
+pos_data = pd.read_csv(file_path)
+
+# Filter for short-term hospitals: provider type code 01 and subtype code 01
+short_term_hospitals = pos_data[
+    (pos_data['PRVDR_CTGRY_CD'] == 1) & (pos_data['PRVDR_CTGRY_SBTYP_CD'] == 1)
+]
+
+# Count the number of hospitals
+num_hospitals = short_term_hospitals.shape[0]
+print(f"Number of short-term hospitals: {num_hospitals}")
+
+
+
+```
+
+
+3. 
+
+``` {python}
+
+import matplotlib.pyplot as plt
+
+# Define file paths for each year's dataset
+file_paths = {
+    2016: "C:/Users/Shreya Work/OneDrive/Documents/GitHub/problem-set-4-shreya-and-tarini/pos2016.csv",
+    2017: "C:/Users/Shreya Work/OneDrive/Documents/GitHub/problem-set-4-shreya-and-tarini/pos2017.csv",
+    2018: "C:/Users/Shreya Work/OneDrive/Documents/GitHub/problem-set-4-shreya-and-tarini/pos2018.csv",
+    2019: "C:/Users/Shreya Work/OneDrive/Documents/GitHub/problem-set-4-shreya-and-tarini/pos2019.csv"
+}
+
+
+# Initialize an empty list to store filtered DataFrames
+hospital_data = []
+
+# Loop through each file path, load data, filter, and append to list
+# Adjusted code to handle encoding
+for year, path in file_paths.items():
+    data = pd.read_csv(path, encoding='ISO-8859-1')  # Change encoding if needed
+    short_term_hospitals = data[(data['PRVDR_CTGRY_CD'] == 1) & (data['PRVDR_CTGRY_SBTYP_CD'] == 1)]
+    short_term_hospitals['Year'] = year  # Add a year column for tracking
+    hospital_data.append(short_term_hospitals)
+
+
+# Concatenate all years' data into a single DataFrame
+combined_data = pd.concat(hospital_data, ignore_index=True)
+
+# Plot the number of observations by year
+obs_by_year = combined_data['Year'].value_counts().sort_index()
+obs_by_year.plot(kind='bar', color='skyblue', edgecolor='black')
+plt.xlabel("Year")
+plt.ylabel("Number of Short-Term Hospitals")
+plt.title("Number of Short-Term Hospitals by Year (2016-2019)")
+plt.show()
+
+```
+
+
 
 ```{python}
 # import pos2016.csv
