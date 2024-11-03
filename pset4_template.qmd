@@ -149,13 +149,130 @@ alt.Chart(pos_df_uniq).mark_bar().encode(
 ## Identify hospital closures in POS file (15 pts) (*)
 
 1. 
+```{python}
+# Filter data for hospitals that were active in 2016
+active_2016 = combined_data[(combined_data['Year'] == 2016) & (combined_data['PGM_TRMNTN_CD'] == 'A')]
 
+# Initialize an empty list to record suspected closures
+suspected_closures = []
+
+# Loop over the active hospitals in 2016
+for index, hospital in active_2016.iterrows():
+    # Get the CMS Certification Number to track across years
+    cms_cert_num = hospital['PRVDR_NUM']
+    facility_name = hospital['FAC_NAME']
+    zip_code = hospital['ZIP_CD']
+    
+    # Track if the hospital appears as active in each subsequent year
+    active_in_later_years = False
+    closure_year = None
+
+    # Check 2017, 2018, and 2019
+    for year in [2017, 2018, 2019]:
+        # Filter for this hospital in the given year
+        hospital_year_data = combined_data[(combined_data['Year'] == year) & (combined_data['PRVDR_NUM'] == cms_cert_num)]
+        
+        if hospital_year_data.empty:
+            # If hospital does not appear at all, record the closure year
+            closure_year = year
+            break
+        elif not any(hospital_year_data['PGM_TRMNTN_CD'] == 'A'):
+            # If hospital appears but is not active, record the closure year
+            closure_year = year
+            break
+        else:
+            # If hospital is active, continue to next year
+            active_in_later_years = True
+    
+    # If hospital was not active through 2019, add to suspected closures
+    if not active_in_later_years:
+        suspected_closures.append({
+            'Facility Name': facility_name,
+            'ZIP Code': zip_code,
+            'Year of Suspected Closure': closure_year
+        })
+
+# Convert suspected closures to a DataFrame for easy viewing and analysis
+closures_df = pd.DataFrame(suspected_closures)
+
+# Output the number of suspected closures
+num_closures = len(closures_df)
+print(f"Number of hospitals suspected to have closed by 2019: {num_closures}")
+closures_df
+
+```
 
 2. 
+
+```{python}
+sorted_closures_df = closures_df.sort_values(by='FAC_NAME') 
+
+# Display the names and year of suspected closure for the first 10 rows
+first_10_closures = sorted_closures_df[['FAC_NAME', 'Year of Suspected Closure']].head(10) 
+first_10_closures
+
+```
+
+
 3. 
     a.
+
+```{python}
+# Step 1: Count the number of active hospitals in each ZIP code per year
+active_hospitals_per_zip_year = all_years_data[all_years_data['PGM_TRMNTN_CD'] == 'A'] \
+                                .groupby(['ZIP_CD', 'Year'])['PRVDR_NUM'] \
+                                .nunique().reset_index(name='Active_Hospital_Count')
+
+# Step 2: Merge the suspected closures with the active hospital counts to get the count for the year of suspected closure and the following year
+closures_with_counts = closures_df.merge(
+    active_hospitals_per_zip_year,
+    left_on=['ZIP_CD', 'Year of Suspected Closure'],
+    right_on=['ZIP_CD', 'Year'],
+    how='left'
+).rename(columns={'Active_Hospital_Count': 'Closure_Year_Count'})
+
+closures_with_counts = closures_with_counts.merge(
+    active_hospitals_per_zip_year,
+    left_on=['ZIP_CD', 'Year of Suspected Closure + 1'],
+    right_on=['ZIP_CD', 'Year'],
+    how='left'
+).rename(columns={'Active_Hospital_Count': 'Following_Year_Count'})
+
+# Step 3: Filter suspected closures where the count of active hospitals does not decrease in the following year
+potential_mergers = closures_with_counts[
+    (closures_with_counts['Following_Year_Count'] >= closures_with_counts['Closure_Year_Count'])
+]
+
+# Output the number of potential mergers
+num_potential_mergers = potential_mergers.shape[0]
+num_potential_mergers
+
+```
+
     b.
+```{python}
+# Step 1: Remove potential mergers from the suspected closures
+corrected_closures = closures_df[~closures_df['PRVDR_NUM'].isin(potential_mergers['PRVDR_NUM'])]
+
+# Step 2: Count the remaining hospitals in the corrected closures list
+num_corrected_closures = corrected_closures.shape[0]
+num_corrected_closures
+
+```
+
     c.
+
+```{python}
+# Step 1: Sort the corrected closures DataFrame by 'Facility Name'
+sorted_corrected_closures = corrected_closures.sort_values(by='FAC_NAME')
+
+# Step 2: Display the first 10 rows of the sorted DataFrame
+first_10_corrected_closures = sorted_corrected_closures[['FAC_NAME', 'Year of Suspected Closure']].head(10)
+
+# Display the results
+first_10_corrected_closures
+
+```
 
 ## Download Census zip code shapefile (10 pt) 
 
