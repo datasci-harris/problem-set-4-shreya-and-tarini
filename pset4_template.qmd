@@ -715,3 +715,18 @@ b. Ways to Improve:
 - Compare hospital characteristics (like bed size, services) between years to better identify if a "new" hospital is actually the same facility
 - Track staffing levels or patient volume to distinguish between true closures and administrative changes
 - Consider tracking changes in nearby ZIP codes too, as mergers might involve facilities in adjacent areas
+
+2. 
+
+a. Limitations of Current Method:
+
+ZIP Code Focus: May overlook changes in access when multiple hospitals exist in a ZIP code.
+Mergers and Transfers: Doesn't account for hospitals that merge or relocate, misrepresenting access.
+
+b. Improvement Suggestions:
+
+Spatial Analysis: Use GIS to analyze distances from residents to hospitals.
+Neighborhood-Level Analysis: Assess access changes at a neighborhood level.
+Patient Data: Gather demographics to understand community impacts.
+Surveys: Collect resident feedback on access changes.
+Health Outcomes: Monitor health outcomes after closures.
