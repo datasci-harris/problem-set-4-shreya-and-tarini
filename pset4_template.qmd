@@ -102,13 +102,11 @@ pos2017['YEAR'] = '2017' # year column
 pos2017_hosp = pos2017[(pos2017['PRVDR_CTGRY_CD'] == 1) & (pos2017['PRVDR_CTGRY_SBTYP_CD'] == 1)] # subsetting data
 
 # pos2018.csv
-pos2018 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2018.csv', encoding='latin1')
 pos2018 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2018.csv', encoding = 'latin1')
 pos2018['YEAR'] = '2018' # year column
 pos2018_hosp = pos2018[(pos2017['PRVDR_CTGRY_CD'] == 1) & (pos2018['PRVDR_CTGRY_SBTYP_CD'] == 1)] # subsetting data
 
 # pos2019.csv
-pos2019 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2019.csv', encoding='latin1')
 pos2019 = pd.read_csv('/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/pos2019.csv', encoding = 'latin1')
 pos2019['YEAR'] = '2019' # year column
 pos2019_hosp = pos2019[(pos2017['PRVDR_CTGRY_CD'] == 1) & (pos2019['PRVDR_CTGRY_SBTYP_CD'] == 1)] # subsetting data
@@ -180,7 +178,6 @@ for file_name in os.listdir(folder_path):
     print(f"File Name: {file_name}, File Size: {file_size_mb:.2f} MB")
 ```
 
-2. 
 2. The number of hospitals per zip code is given in the output below.
 
 ```{python}
@@ -189,12 +186,9 @@ import matplotlib.pyplot as plt
 
 # loading .shp file
 filepath = "/Users/tarini_dewan/Desktop/UChicago/Python_2/problem-set-4-shreya-and-tarini/gz_2010_us_860_00_500k/gz_2010_us_860_00_500k.shp"
-data = gpd.read_file(filepath)
 texas_df = gpd.read_file(filepath)
 
 # filtering data to Texas zip codes
-data['Texas'] = data['ZCTA5'].apply(lambda x: 1 if x.startswith(('75', '76', '77', '78', '79')) else 0)
-data = data[data['Texas'] == 1]
 texas_df['Texas'] = texas_df['ZCTA5'].apply(lambda x: 1 if x.startswith(('75', '76', '77', '78', '79')) else 0)
 texas_df = texas_df[texas_df['Texas'] == 1]
 
